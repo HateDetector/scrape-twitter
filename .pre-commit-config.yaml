@@ -1,0 +1,10 @@
+- repo: local
+  hooks:
+  - id: pytest
+    name: pytest
+    entry: python -m pytest test/
+    language: system
+    types: [python]
+    verbose: true
+    pass_filenames: false
+    stages: [push]

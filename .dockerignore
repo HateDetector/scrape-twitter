@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+.pytest_cache/
+.cache
+.pyc
+.env
+._*
+*.csv
+*.xlsx
+*.xls
+*.txt
+*.pickle
+*.log
+*.json
