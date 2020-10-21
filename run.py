@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv, set_key
 from pathlib import Path
-from src.get_tweets_snscrape import save_tweets_by_user_since
+from src.get_tweets_snscrape import save_tweets_by_user_since, merge_sns_files
 
 if __name__ == "__main__":
     # args for search by users
@@ -18,7 +18,9 @@ if __name__ == "__main__":
                   'JoeBiden', 'KamalaHarris']
     load_dotenv()
     date_since = os.getenv('DATE_SINCE')
-    save_tweets_by_user_since(candidates, date_since, "./temp-data/")
+    filepath = "./temp-data/"
+    save_tweets_by_user_since(candidates, date_since, filepath)
+    merge_sns_files(filepath)
     new_date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     set_key('.env', 'DATE_SINCE', new_date)
 
