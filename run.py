@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv, set_key
 from src.get_tweets_snscrape import get_tweets_by_user_since, merge_sns_files
+from src.get_tweets_tweepy import TwitterAPI
 
 
 def main():
@@ -16,16 +17,21 @@ def main():
     # get past tweets with snscrape
     get_tweets_by_user_since(candidates, date_since,
                              filepath, until=date_until)
-    merge_sns_files(filepath)
+    new_ids = merge_sns_files(filepath)
+    print("run.py, new_ids: ")
+    print(new_ids)
 
     # tweepy to get details
-
+    TP = TwitterAPI(api_key=os.getenv('CONS_API_KEY'),
+                    api_secret=os.getenv('CONS_API_SEC'),
+                    acc_token=os.getenv('ACCESS_TOKEN'), 
+                    acc_secret=os.getenv('ACCESS_SECRET'))
+    df = TP.get_statuses(new_ids)
+    print(df)
 
     # store in postgres
 
-
     # get replies (ongoing)
-
 
     # reset env
     # new_date_since = (datetime.today() - timedelta(days=1)

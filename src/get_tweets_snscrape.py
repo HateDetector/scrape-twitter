@@ -14,6 +14,7 @@ def get_tweets_by_user_since(users, date, filepath, until=datetime.today().strft
 
 def merge_sns_files(filepath, id_only=True):
     read_files = glob.glob(filepath+"*.txt")
+    ids = []
     with open(filepath + "sns-merged.txt", "wb") as outfile:
         for f in read_files:
             with open(f, "rb") as infile:
@@ -21,9 +22,11 @@ def merge_sns_files(filepath, id_only=True):
                     outfile.write(infile.read())
                 else:
                     for l in infile.read().splitlines():
-                        print(str(l).split("'")[1].split("/")[-1])
-                        outfile.write((str(l).split("'")[1].split(
-                            "/")[-1] + "\n").encode('utf-8'))
+                        tw_id = str(l).split("'")[1].split("/")[-1]
+                        ids.append(tw_id)
+                        print(tw_id)
+                        outfile.write((tw_id + "\n").encode('utf-8'))
+    return ids
 
 
 # tbc
