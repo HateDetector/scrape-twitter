@@ -5,21 +5,16 @@ from pathlib import Path
 from src.get_tweets_snscrape import save_tweets_by_user_since, merge_sns_files
 
 if __name__ == "__main__":
-    # args for search by users
-    # args for search by term
-    # args for limit
-    # long term - output/ db connection
 
     # scrape
-    # store in csv/ postgres
+    load_dotenv()
 
     # get past tweets then get last days tweets
-    candidates = ['realDonaldTrump', 'Mike_Pence',
-                  'JoeBiden', 'KamalaHarris']
-    load_dotenv()
+    candidates = os.getenv('USERS').split(',')
     date_since = os.getenv('DATE_SINCE')
+    date_until = os.getenv('DATE_UNTIL')
     filepath = "./temp-data/"
-    save_tweets_by_user_since(candidates, date_since, filepath)
+    save_tweets_by_user_since(candidates, date_since, filepath, until=date_until)
     merge_sns_files(filepath)
     new_date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     set_key('.env', 'DATE_SINCE', new_date)
