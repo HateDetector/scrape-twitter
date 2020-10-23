@@ -12,12 +12,12 @@ def main():
     candidates = os.getenv('USERS').split(',')
     date_since = os.getenv('DATE_SINCE')
     date_until = os.getenv('DATE_UNTIL')
-    filepath = "./temp-data/"
+    temp_data_path = "./temp-data/"
 
     # get past tweets with snscrape
     get_tweets_by_user_since(candidates, date_since,
-                             filepath, until=date_until)
-    new_ids = merge_sns_files(filepath)
+                             temp_data_path, until=date_until)
+    new_ids = merge_sns_files(temp_data_path)
     print("run.py, new_ids: ")
     print(new_ids)
 
