@@ -1,25 +1,38 @@
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv, set_key
-from pathlib import Path
-from src.get_tweets_snscrape import save_tweets_by_user_since, merge_sns_files
+from src.get_tweets_snscrape import get_tweets_by_user_since, merge_sns_files
 
-if __name__ == "__main__":
 
-    # scrape
+def main():
+
+    # setup
     load_dotenv()
-
-    # get past tweets then get last days tweets
     candidates = os.getenv('USERS').split(',')
     date_since = os.getenv('DATE_SINCE')
     date_until = os.getenv('DATE_UNTIL')
     filepath = "./temp-data/"
-    save_tweets_by_user_since(candidates, date_since, filepath, until=date_until)
-    merge_sns_files(filepath)
-    new_date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-    set_key('.env', 'DATE_SINCE', new_date)
 
-    # use tweepy to get all the tweet info into a df then into postgres
+    # get past tweets with snscrape
+    get_tweets_by_user_since(candidates, date_since,
+                             filepath, until=date_until)
+    merge_sns_files(filepath)
+
+    # tweepy to get details
+
+
+    # store in postgres
+
+
+    # get replies (ongoing)
+
+
+    # reset env
+    # new_date_since = (datetime.today() - timedelta(days=1)
+    #                   ).strftime('%Y-%m-%d')
+    # new_date_until = datetime.today().strftime('%Y-%m-%d')
+    # set_key('.env', 'DATE_SINCE', new_date_since)
+    # set_key('.env', 'DATE_UNTIL', new_date_until)
 
 
 """
@@ -33,3 +46,7 @@ for tweet in tweepy.Cursor(api.search,q='to:'+name, result_type='recent', timeou
         if (tweet.in_reply_to_status_id_str==tweet_id):
             replies.append(tweet)
 """
+
+
+if __name__ == "__main__":
+    main()
