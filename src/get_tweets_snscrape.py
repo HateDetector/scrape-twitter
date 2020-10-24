@@ -1,7 +1,7 @@
-import os
 import glob
-from pathlib import Path
+import os
 from datetime import datetime
+from pathlib import Path
 
 
 def get_tweets_by_user_since(users, date, filepath, until=datetime.today().strftime('%Y-%m-%d')):
@@ -24,7 +24,6 @@ def merge_sns_files(filepath, id_only=True):
                     for l in infile.read().splitlines():
                         tw_id = str(l).split("'")[1].split("/")[-1]
                         ids.append(tw_id)
-                        print(tw_id)
                         outfile.write((tw_id + "\n").encode('utf-8'))
     return ids
 
