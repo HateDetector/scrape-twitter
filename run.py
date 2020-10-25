@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv, set_key
-from src.get_tweets_snscrape import get_tweets_by_user_since, merge_sns_files
+from src.get_tweets_snscrape import get_tweets_by_term_since, get_tweets_by_user_since, merge_sns_files
 from src.get_tweets_tweepy import TwitterAPI
 
 
@@ -10,6 +10,7 @@ def main():
     # setup
     load_dotenv()
     candidates = os.getenv('USERS').split(',')
+    terms = os.getenv('TERMS').split(',')
     date_since = os.getenv('DATE_SINCE')
     date_until = os.getenv('DATE_UNTIL')
     temp_data_path = "./temp-data/"
@@ -17,6 +18,8 @@ def main():
     # get past tweets with snscrape
     get_tweets_by_user_since(candidates, date_since,
                              temp_data_path, until=date_until)
+    # get_tweets_by_term_since(terms, date_since,
+    #                          temp_data_path, until=date_until)
     new_ids = merge_sns_files(temp_data_path)
 
     # tweepy to get details from snscrape tweet ids
@@ -26,12 +29,14 @@ def main():
                     acc_secret=os.getenv('ACCESS_SECRET'))
     statuses_df = TP.get_statuses(new_ids, is_extended=True)
 
+    print(statuses_df.iloc[0])
+
     # temporary store in csv
-    statuses_df.to_csv(temp_data_path + "tp_statuses.csv", index=False, header=True)
+    statuses_df.to_csv(temp_data_path + "tp_statuses.csv",
+                       index=False, header=True)
 
     # store in postgres
     # does the table exist?
-
 
     # get replies (ongoing)
 

@@ -7,8 +7,16 @@ from pathlib import Path
 def get_tweets_by_user_since(users, date, filepath, until=datetime.today().strftime('%Y-%m-%d')):
     Path(filepath).mkdir(parents=True, exist_ok=True)
     for user in users:
-        command = "snscrape twitter-search 'from:{0} since:{1} until:{2}' >{3}sns-{0}.txt".format(
+        command = "snscrape twitter-search 'from:{0} since:{1} until:{2}' >{3}sns-user-{0}.txt".format(
             user, date, until, filepath)
+        os.system(command)
+
+
+def get_tweets_by_term_since(terms, date, filepath, until=datetime.today().strftime('%Y-%m-%d')):
+    Path(filepath).mkdir(parents=True, exist_ok=True)
+    for term in terms:
+        command = "snscrape twitter-search '{0} since:{1} until:{2}' >{3}sns-term-{0}.txt".format(
+            term, date, until, filepath)
         os.system(command)
 
 
@@ -26,10 +34,3 @@ def merge_sns_files(filepath, id_only=True):
                         ids.append(tw_id)
                         outfile.write((tw_id + "\n").encode('utf-8'))
     return ids
-
-
-# tbc
-# def save_tweets_by_term(terms):
-#   for term in terms:
-#     command = ("snscrape twitter-search 'from:{0} since:{1}' >{2}twitter-{0}".format(user, date, filepath))
-#     os.system(command)
