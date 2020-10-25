@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 import tweepy as tp
 
 
@@ -26,15 +27,16 @@ class TwitterAPI:
 
     @staticmethod
     def _extract_entity_hashtags(hashtags):
-        return ":".join([hashtags[n]['text'] for n in range(len(hashtags))])
+        return "|".join([hashtags[n]['text'] for n in range(len(hashtags))])
 
     @staticmethod
     def _extract_entity_mentions(mentsions):
         pass
 
     @staticmethod
-    def _extract_entity_urls(urls):
-        pass
+    def _extract_entity_urls(urls, remove_protocol=False):
+        re_http_www = re.compile(r'^(?:https?://)?(?:www.)?') if remove_protocol else ""
+        return "|".join([re.sub(re_http_www, "", urls[n]['expanded_url']) for n in range(len(urls))])
 
     @staticmethod
     def _extract_status_attributes(status):
@@ -44,8 +46,8 @@ class TwitterAPI:
             "id_str": status.id_str,
             "text": status.text,
             "hashtags": TwitterAPI._extract_entity_hashtags(status.entities['hashtags']),
-            # "media_obj": str(status.entities['media']),
-            # "urls": TwitterAPI._extract_entity_urls(status.entities.urls),
+            "media_obj": str(status.entities['media']),
+            "urls": TwitterAPI._extract_entity_urls(status.entities['urls']),
             # "user_mentions": TwitterAPI._extract_entity_mentions(status.entities.user_mentions),
             "source": status.source,
             "source_url": status.source_url,
@@ -54,7 +56,11 @@ class TwitterAPI:
             "in_reply_to_user_id": status.in_reply_to_user_id,
             "in_reply_to_user_id_str": status.in_reply_to_user_id_str,
             "in_reply_to_screen_name": status.in_reply_to_screen_name,
-            "user": status.user,
+            "user_id_str": status.user['id_str'],
+            "user_screen_name": status.user['screen_name'],
+            "user_name": status.user['name'],
+            "user_location": status.user['location'],
+            "user_created_at": status.user['created_at'],
             "geo": status.geo,
             "coordinates": status.coordinates,
             "place": status.place,
@@ -80,6 +86,7 @@ class TwitterAPI:
         for l in chunked_ids:
             new_statuses = self._api.statuses_lookup(l)
             for s in new_statuses:
-                statuses = statuses.append(self._extract_status_attributes(s), ignore_index=True)
+                statuses = statuses.append(
+                    self._extract_status_attributes(s), ignore_index=True)
             break
         return statuses
