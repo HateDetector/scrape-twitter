@@ -13,9 +13,6 @@ class TwitterAPI:
 
     STATUS_LIMIT = 100  # limit of statuses per tweepy request
     _api = None
-    all_tweet_ids = {}
-    waiting = False  # maybe useful depends on tweepy settings
-    replies = []  # not sure I needs
 
     def __init__(self, api_key, api_secret, acc_token, acc_secret):
         self.set_api(api_key, api_secret, acc_token, acc_secret)
@@ -39,11 +36,21 @@ class TwitterAPI:
         return "|".join([mentions[n][attribute] for n in range(len(mentions))])
 
     @staticmethod
-    def _extract_entity_urls(urls, remove_protocol=False):
+    def _extract_entity_urls(urls, remove_protocol=False, unwound=False):
+        # if unwound:
+        #     return TwitterAPI._extract_entity_urls_unwound(urls, remove_protocol)
         if remove_protocol:
             return "|".join([TwitterAPI._remove_url_protocol(urls[n]['expanded_url']) for n in range(len(urls))])
         else:
             return "|".join([urls[n]['expanded_url'] for n in range(len(urls))])
+
+    # extended entities exist, but unsure how to access via tweepy
+    # @staticmethod
+    # def _extract_entity_urls_unwound(urls, remove_protocol):
+    #     if remove_protocol:
+    #         return "|".join([TwitterAPI._remove_url_protocol(urls[n]['unwound']['url']) for n in range(len(urls))])
+    #     else:
+    #         return "|".join([urls[n]['unwound']['url'] for n in range(len(urls))])
 
     @ staticmethod
     def _extract_entity_media_urls(media, remove_protocol=False):
@@ -53,25 +60,39 @@ class TwitterAPI:
             return "|".join([media[n]['media_url'] for n in range(len(media))])
 
     @ staticmethod
-    def _extract_status_attributes(status):
+    def _extract_status_attributes(status, extended=False):
+        text = status.full_text if extended else status.text
+        hashtags = TwitterAPI._extract_entity_hashtags(
+            status.entities['hashtags'])
+        media_urls = (TwitterAPI._extract_entity_media_urls(
+            status.entities['media'], remove_protocol=True)
+            if 'media' in status.entities else "")
+        urls = (TwitterAPI._extract_entity_urls(
+            status.entities['urls'], remove_protocol=True, unwound=True)
+            if extended else TwitterAPI._extract_entity_urls(
+            status.entities['urls'], remove_protocol=True))
+        user_mention = TwitterAPI._extract_entity_mentions(
+            status.entities['user_mentions'])
+        user_mention_id = str(TwitterAPI._extract_entity_mentions(
+            status.entities['user_mentions'], as_id=True))
         return {
             "created_at": status.created_at,
             "id": status.id,
-            "id_str": status.id_str,
-            "text": status.text,
-            "hashtags": TwitterAPI._extract_entity_hashtags(status.entities['hashtags']),
-            "media_urls": TwitterAPI._extract_entity_media_urls(status.entities['media'], remove_protocol=True) if 'media' in status.entities else "",
-            "urls": TwitterAPI._extract_entity_urls(status.entities['urls'], remove_protocol=True),
-            "user_mentions_screen_name": TwitterAPI._extract_entity_mentions(status.entities['user_mentions']),
-            "user_mentions_id_str": TwitterAPI._extract_entity_mentions(status.entities['user_mentions'], as_id=True),
+            "id_str": str(status.id_str),
+            "text": text,
+            "hashtags": hashtags,
+            "media_urls": media_urls,
+            "urls": urls,
+            "user_mentions_screen_name": user_mention,
+            "user_mentions_id_str": user_mention_id,
             "source": status.source,
             "source_url": status.source_url,
             "in_reply_to_status_id": status.in_reply_to_status_id,
-            "in_reply_to_status_id_str": status.in_reply_to_status_id_str,
+            "in_reply_to_status_id_str": str(status.in_reply_to_status_id_str),
             "in_reply_to_user_id": status.in_reply_to_user_id,
-            "in_reply_to_user_id_str": status.in_reply_to_user_id_str,
+            "in_reply_to_user_id_str": str(status.in_reply_to_user_id_str),
             "in_reply_to_screen_name": status.in_reply_to_screen_name,
-            "user_id_str": status.user.id_str,
+            "user_id_str": str(status.user.id_str),
             "user_screen_name": status.user.screen_name,
             "user_name": status.user.name,
             "user_location": status.user.location,
@@ -83,25 +104,33 @@ class TwitterAPI:
             "is_quote_status": status.is_quote_status,
             "retweet_count": status.retweet_count,
             "favorite_count": status.favorite_count,
-            "favorited": status.favorited,
-            "retweeted": status.retweeted,
+            # "favorited": status.favorited,  # out dated metric
+            # "retweeted": status.retweeted,  # out dated metric
             "lang": status.lang
         }
 
     def set_api(self, api_key, api_secret, acc_token, acc_secret):
-        auth=tp.OAuthHandler(api_key, api_secret)
+        auth = tp.OAuthHandler(api_key, api_secret)
         auth.set_access_token(acc_token, acc_secret)
-        self._api=tp.API(auth, wait_on_rate_limit=True,
+        self._api = tp.API(auth, wait_on_rate_limit=True,
                            wait_on_rate_limit_notify=True)
 
-    def get_statuses(self, new_tweet_ids):
-        self.new_tweet_ids=new_tweet_ids
-        chunked_ids=TwitterAPI._chunk(new_tweet_ids, TwitterAPI.STATUS_LIMIT)
-        statuses=pd.DataFrame()
+    def get_statuses(self, new_tweet_ids, extended=False):
+        self.new_tweet_ids = new_tweet_ids
+        chunked_ids = TwitterAPI._chunk(new_tweet_ids, TwitterAPI.STATUS_LIMIT)
+        statuses = pd.DataFrame()
         for l in chunked_ids:
-            new_statuses=self._api.statuses_lookup(l)
+            if extended:
+                new_statuses = self._api.statuses_lookup(
+                    l, tweet_mode="extended")
+            else:
+                new_statuses = self._api.statuses_lookup(l)
             for s in new_statuses:
-                statuses=statuses.append(
-                    self._extract_status_attributes(s), ignore_index=True)
+                if extended:
+                    statuses = statuses.append(self._extract_status_attributes(
+                        s, extended=True), ignore_index=True)
+                else:
+                    statuses = statuses.append(
+                        self._extract_status_attributes(s), ignore_index=True)
             break
         return statuses

@@ -19,13 +19,15 @@ def main():
                              temp_data_path, until=date_until)
     new_ids = merge_sns_files(temp_data_path)
 
-    # tweepy to get details
+    # tweepy to get details from snscrape
     TP = TwitterAPI(api_key=os.getenv('CONS_API_KEY'),
                     api_secret=os.getenv('CONS_API_SEC'),
                     acc_token=os.getenv('ACCESS_TOKEN'),
                     acc_secret=os.getenv('ACCESS_SECRET'))
-    statuses_df = TP.get_statuses(new_ids)
-    print(statuses_df)
+    statuses_df = TP.get_statuses(new_ids, extended=True)
+
+    # temporary store in csv
+    statuses_df.to_csv(temp_data_path + "tp_statuses.csv", index=False, header=True)
 
     # store in postgres
 
