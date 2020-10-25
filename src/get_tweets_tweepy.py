@@ -76,9 +76,9 @@ class TwitterAPI:
         user_mention_id = str(TwitterAPI._extract_entity_mentions(
             status.entities['user_mentions'], as_id=True))
         return {
-            "created_at": status.created_at,
             "id": status.id,
             "id_str": str(status.id_str),
+            "created_at": status.created_at,
             "text": text,
             "hashtags": hashtags,
             "media_urls": media_urls,
@@ -115,22 +115,18 @@ class TwitterAPI:
         self._api = tp.API(auth, wait_on_rate_limit=True,
                            wait_on_rate_limit_notify=True)
 
-    def get_statuses(self, new_tweet_ids, extended=False):
+    def get_statuses(self, new_tweet_ids, is_extended=False):
         self.new_tweet_ids = new_tweet_ids
         chunked_ids = TwitterAPI._chunk(new_tweet_ids, TwitterAPI.STATUS_LIMIT)
         statuses = pd.DataFrame()
         for l in chunked_ids:
-            if extended:
-                new_statuses = self._api.statuses_lookup(
-                    l, tweet_mode="extended")
-            else:
-                new_statuses = self._api.statuses_lookup(l)
-            for s in new_statuses:
-                if extended:
-                    statuses = statuses.append(self._extract_status_attributes(
-                        s, extended=True), ignore_index=True)
-                else:
-                    statuses = statuses.append(
-                        self._extract_status_attributes(s), ignore_index=True)
+            ext = "extended" if is_extended else ""
+            new_sta = self._api.statuses_lookup(l, tweet_mode=ext)
+            raw_sta = self._extract_status_attributes(
+                new_sta[0], extended=is_extended)
+            statuses = pd.DataFrame(raw_sta, columns=raw_sta.keys(), index=[0])
+            for x in range(1, len(new_sta)):
+                statuses = statuses.append(self._extract_status_attributes(
+                        new_sta[x], extended=is_extended), ignore_index=True)
             break
         return statuses
