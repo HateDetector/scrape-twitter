@@ -30,12 +30,14 @@ class TwitterAPI:
         return "|".join([hashtags[n]['text'] for n in range(len(hashtags))])
 
     @staticmethod
-    def _extract_entity_mentions(mentsions):
-        pass
+    def _extract_entity_mentions(mentions, as_id=False):
+        attribute = 'id_str' if as_id else 'screen_name'
+        return "|".join([mentions[n][attribute] for n in range(len(mentions))])
 
     @staticmethod
     def _extract_entity_urls(urls, remove_protocol=False):
-        re_http_www = re.compile(r'^(?:https?://)?(?:www.)?') if remove_protocol else ""
+        re_http_www = re.compile(
+            r'^(?:https?://)?(?:www.)?') if remove_protocol else ""
         return "|".join([re.sub(re_http_www, "", urls[n]['expanded_url']) for n in range(len(urls))])
 
     @staticmethod
@@ -48,7 +50,8 @@ class TwitterAPI:
             "hashtags": TwitterAPI._extract_entity_hashtags(status.entities['hashtags']),
             "media_obj": str(status.entities['media']),
             "urls": TwitterAPI._extract_entity_urls(status.entities['urls']),
-            # "user_mentions": TwitterAPI._extract_entity_mentions(status.entities.user_mentions),
+            "user_mentions_screen_name": TwitterAPI._extract_entity_mentions(status.entities['user_mentions']),
+            "user_mentions_id_str": TwitterAPI._extract_entity_mentions(status.entities['user_mentions'], as_id=True),
             "source": status.source,
             "source_url": status.source_url,
             "in_reply_to_status_id": status.in_reply_to_status_id,
