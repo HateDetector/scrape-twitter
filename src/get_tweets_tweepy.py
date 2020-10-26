@@ -76,7 +76,7 @@ class TwitterAPI:
         user_mention_id = str(TwitterAPI._extract_entity_mentions(
             status.entities['user_mentions'], as_id=True))
         return {
-            "id": status.id,
+            # "id": status.id,  # just use id_str
             "id_str": str(status.id_str),
             "created_at": status.created_at,
             "text": text,
@@ -87,9 +87,9 @@ class TwitterAPI:
             "user_mentions_id_str": user_mention_id,
             "source": status.source,
             "source_url": status.source_url,
-            "in_reply_to_status_id": status.in_reply_to_status_id,
+            # "in_reply_to_status_id": status.in_reply_to_status_id,  # just use id_str
+            # "in_reply_to_user_id": status.in_reply_to_user_id,  # just use id_str
             "in_reply_to_status_id_str": str(status.in_reply_to_status_id_str),
-            "in_reply_to_user_id": status.in_reply_to_user_id,
             "in_reply_to_user_id_str": str(status.in_reply_to_user_id_str),
             "in_reply_to_screen_name": status.in_reply_to_screen_name,
             "user_id_str": str(status.user.id_str),
@@ -104,8 +104,8 @@ class TwitterAPI:
             "is_quote_status": status.is_quote_status,
             "retweet_count": status.retweet_count,
             "favorite_count": status.favorite_count,
-            # "favorited": status.favorited,  # out dated metric
-            # "retweeted": status.retweeted,  # out dated metric
+            # "favorited": status.favorited,  # outdated metric
+            # "retweeted": status.retweeted,  # outdated metric
             "lang": status.lang
         }
 
@@ -127,6 +127,17 @@ class TwitterAPI:
             statuses = pd.DataFrame(raw_sta, columns=raw_sta.keys(), index=[0])
             for x in range(1, len(new_sta)):
                 statuses = statuses.append(self._extract_status_attributes(
-                        new_sta[x], extended=is_extended), ignore_index=True)
-            break
+                    new_sta[x], extended=is_extended), ignore_index=True)
         return statuses
+
+    def get_replies(self, users_and_tweets, date_since, date_until):
+        users = users_and_tweets['user_screen_name'].unique()
+        for user in users:
+            user_tweets = users_and_tweets[users_and_tweets['user_screen_name']==user]
+            user_tweet_set = set(user_tweets['id_str'].unique())
+            replies = []
+            for tweet in tp.Cursor(self._api.search, q='to:'+user, since=date_since, until=date_until, timeout=999999).items():
+                if hasattr(tweet, 'in_reply_to_status_id_str'):
+                    if tweet.in_reply_to_status_id_str in user_tweet_set:
+                        replies.append(tweet)
+        return replies
