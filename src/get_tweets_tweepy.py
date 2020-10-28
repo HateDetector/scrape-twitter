@@ -119,7 +119,7 @@ class TwitterAPI:
         ext = "extended" if is_extended else ""
         statuses = pd.DataFrame()
         first_run = True
-        
+
         for l in chunked_ids:
             new_sta = self._api.statuses_lookup(l, tweet_mode=ext)
             raw_sta = self._extract_status_attributes(
@@ -131,23 +131,11 @@ class TwitterAPI:
                 chunked_statuses = chunked_statuses.append(self._extract_status_attributes(
                     new_sta[x], extended=is_extended), ignore_index=True)
 
-            if add_to_csv:
+            if add_to_csv and first_run:
                 chunked_statuses.to_csv(filepath + ".csv",
                                         index=False, header=first_run, mode='a')
-
-            if first_run: False
+                first_run = False
 
             statuses.append(chunked_statuses, ignore_index=True)
         return statuses
-
-    def get_replies(self, users_and_tweets, date_since, date_until):
-        users = users_and_tweets['user_screen_name'].unique()
-        for user in users:
-            user_tweets = users_and_tweets[users_and_tweets['user_screen_name'] == user]
-            user_tweet_set = set(user_tweets['id_str'].unique())
-            replies = []
-            for tweet in tp.Cursor(self._api.search, q='to:'+user, since=date_since, until=date_until, timeout=999999).items():
-                if hasattr(tweet, 'in_reply_to_status_id_str'):
-                    if tweet.in_reply_to_status_id_str in user_tweet_set:
-                        replies.append(tweet)
-        return replies
+ 
