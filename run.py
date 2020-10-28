@@ -20,13 +20,14 @@ def main():
     #                          temp_data_path, until=date_until)
 
     # get tweets by terms
-    terms = os.getenv('TERMS').split(',')
-    get_tweets_by_term_since(terms, date_since,
-                             temp_data_path, until=date_until)
+    # terms = os.getenv('TERMS').split(',')
+    # get_tweets_by_term_since(terms, date_since,
+    #                          temp_data_path, until=date_until)
     new_ids = merge_sns_files(temp_data_path)
 
     # need to remove duplicates first to save on tweepy limit
     new_ids = list(dict.fromkeys(new_ids))
+    print(len(new_ids))
 
     # tweepy to get details from snscrape tweet ids
     TP = TwitterAPI(api_key=os.getenv('CONS_API_KEY'),

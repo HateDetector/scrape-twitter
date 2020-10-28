@@ -117,31 +117,33 @@ class TwitterAPI:
     def get_statuses(self, new_tweet_ids, is_extended=False, add_to_csv=True, filepath="./tp_statuses"):
         chunked_ids = TwitterAPI._chunk(new_tweet_ids, TwitterAPI.STATUS_LIMIT)
         ext = "extended" if is_extended else ""
-        first_run = True
         statuses = pd.DataFrame()
+        first_run = True
+        
         for l in chunked_ids:
             new_sta = self._api.statuses_lookup(l, tweet_mode=ext)
-            if first_run:
-                raw_sta = self._extract_status_attributes(
-                    new_sta[0], extended=is_extended)
-                statuses = pd.DataFrame(raw_sta, columns=raw_sta.keys(), index=[0])
+            raw_sta = self._extract_status_attributes(
+                new_sta[0], extended=is_extended)
+            chunked_statuses = pd.DataFrame(
+                raw_sta, columns=raw_sta.keys(), index=[0])
+
             for x in range(1, len(new_sta)):
-                statuses = statuses.append(self._extract_status_attributes(
+                chunked_statuses = chunked_statuses.append(self._extract_status_attributes(
                     new_sta[x], extended=is_extended), ignore_index=True)
-            if first_run and add_to_csv:
-                statuses.to_csv(filepath + ".csv",
-                                index=False, header=True)
-            elif add_to_csv:
-                statuses.to_csv(filepath + ".csv",
-                                index=False, header=False, mode='a')
-            if first_run:
-                first_run = False
+
+            if add_to_csv:
+                chunked_statuses.to_csv(filepath + ".csv",
+                                        index=False, header=first_run, mode='a')
+
+            if first_run: False
+
+            statuses.append(chunked_statuses, ignore_index=True)
         return statuses
 
     def get_replies(self, users_and_tweets, date_since, date_until):
         users = users_and_tweets['user_screen_name'].unique()
         for user in users:
-            user_tweets = users_and_tweets[users_and_tweets['user_screen_name']==user]
+            user_tweets = users_and_tweets[users_and_tweets['user_screen_name'] == user]
             user_tweet_set = set(user_tweets['id_str'].unique())
             replies = []
             for tweet in tp.Cursor(self._api.search, q='to:'+user, since=date_since, until=date_until, timeout=999999).items():
