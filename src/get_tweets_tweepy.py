@@ -8,7 +8,6 @@ class TwitterAPI:
     Setup for Twitter API using tweepy
     :param STATUS_LIMIT: number of statuses that can be retrived in a batch
     :param _api: the api setup
-    :param new_tweet_ids: array of tweet ids to get statuses for
     """
 
     STATUS_LIMIT = 100  # limit of statuses per tweepy request
@@ -115,19 +114,28 @@ class TwitterAPI:
         self._api = tp.API(auth, wait_on_rate_limit=True,
                            wait_on_rate_limit_notify=True)
 
-    def get_statuses(self, new_tweet_ids, is_extended=False):
-        self.new_tweet_ids = new_tweet_ids
+    def get_statuses(self, new_tweet_ids, is_extended=False, add_to_csv=True, filepath="./tp_statuses"):
         chunked_ids = TwitterAPI._chunk(new_tweet_ids, TwitterAPI.STATUS_LIMIT)
+        ext = "extended" if is_extended else ""
+        first_run = True
         statuses = pd.DataFrame()
         for l in chunked_ids:
-            ext = "extended" if is_extended else ""
             new_sta = self._api.statuses_lookup(l, tweet_mode=ext)
-            raw_sta = self._extract_status_attributes(
-                new_sta[0], extended=is_extended)
-            statuses = pd.DataFrame(raw_sta, columns=raw_sta.keys(), index=[0])
+            if first_run:
+                raw_sta = self._extract_status_attributes(
+                    new_sta[0], extended=is_extended)
+                statuses = pd.DataFrame(raw_sta, columns=raw_sta.keys(), index=[0])
             for x in range(1, len(new_sta)):
                 statuses = statuses.append(self._extract_status_attributes(
                     new_sta[x], extended=is_extended), ignore_index=True)
+            if first_run and add_to_csv:
+                statuses.to_csv(filepath + ".csv",
+                                index=False, header=True)
+            elif add_to_csv:
+                statuses.to_csv(filepath + ".csv",
+                                index=False, header=False, mode='a')
+            if first_run:
+                first_run = False
         return statuses
 
     def get_replies(self, users_and_tweets, date_since, date_until):
