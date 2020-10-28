@@ -131,9 +131,10 @@ class TwitterAPI:
                 chunked_statuses = chunked_statuses.append(self._extract_status_attributes(
                     new_sta[x], extended=is_extended), ignore_index=True)
 
-            if add_to_csv and first_run:
+            if add_to_csv:
                 chunked_statuses.to_csv(filepath + ".csv",
                                         index=False, header=first_run, mode='a')
+            if first_run:
                 first_run = False
 
             statuses.append(chunked_statuses, ignore_index=True)
