@@ -8,7 +8,6 @@ class TwitterAPI:
     Setup for Twitter API using tweepy
     :param STATUS_LIMIT: number of statuses that can be retrived in a batch
     :param _api: the api setup
-    :param new_tweet_ids: array of tweet ids to get statuses for
     """
 
     STATUS_LIMIT = 100  # limit of statuses per tweepy request
@@ -115,29 +114,29 @@ class TwitterAPI:
         self._api = tp.API(auth, wait_on_rate_limit=True,
                            wait_on_rate_limit_notify=True)
 
-    def get_statuses(self, new_tweet_ids, is_extended=False):
-        self.new_tweet_ids = new_tweet_ids
+    def get_statuses(self, new_tweet_ids, is_extended=False, add_to_csv=True, filepath="./tp_statuses"):
         chunked_ids = TwitterAPI._chunk(new_tweet_ids, TwitterAPI.STATUS_LIMIT)
+        ext = "extended" if is_extended else ""
         statuses = pd.DataFrame()
+        first_run = True
+
         for l in chunked_ids:
-            ext = "extended" if is_extended else ""
             new_sta = self._api.statuses_lookup(l, tweet_mode=ext)
             raw_sta = self._extract_status_attributes(
                 new_sta[0], extended=is_extended)
-            statuses = pd.DataFrame(raw_sta, columns=raw_sta.keys(), index=[0])
-            for x in range(1, len(new_sta)):
-                statuses = statuses.append(self._extract_status_attributes(
-                    new_sta[x], extended=is_extended), ignore_index=True)
-        return statuses
+            chunked_statuses = pd.DataFrame(
+                raw_sta, columns=raw_sta.keys(), index=[0])
 
-    def get_replies(self, users_and_tweets, date_since, date_until):
-        users = users_and_tweets['user_screen_name'].unique()
-        for user in users:
-            user_tweets = users_and_tweets[users_and_tweets['user_screen_name']==user]
-            user_tweet_set = set(user_tweets['id_str'].unique())
-            replies = []
-            for tweet in tp.Cursor(self._api.search, q='to:'+user, since=date_since, until=date_until, timeout=999999).items():
-                if hasattr(tweet, 'in_reply_to_status_id_str'):
-                    if tweet.in_reply_to_status_id_str in user_tweet_set:
-                        replies.append(tweet)
-        return replies
+            for x in range(1, len(new_sta)):
+                chunked_statuses = chunked_statuses.append(self._extract_status_attributes(
+                    new_sta[x], extended=is_extended), ignore_index=True)
+
+            if add_to_csv:
+                chunked_statuses.to_csv(filepath + ".csv",
+                                        index=False, header=first_run, mode='a')
+            if first_run:
+                first_run = False
+
+            statuses.append(chunked_statuses, ignore_index=True)
+        return statuses
+ 
