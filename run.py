@@ -29,6 +29,11 @@ def main():
     # remove duplicates first to save on tweepy limit
     new_ids = list(dict.fromkeys(new_ids))
 
+    # alternative to get tweet ids direct from file
+    # with open("/Users/joeworsfold/hatedetector/scrape-twitter/temp-data/sns-merged.txt", 'r') as f:
+    #     new_ids = f.read().split('\n')
+    #     new_ids = list(dict.fromkeys(new_ids))
+
     # tweepy to get details from snscrape tweet ids
     TP = TwitterAPI(api_key=os.getenv('CONS_API_KEY'),
                     api_secret=os.getenv('CONS_API_SEC'),
